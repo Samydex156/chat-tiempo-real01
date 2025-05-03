@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat en Tiempo Real</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.15/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const App = () => {
+      const [username, setUsername] = useState('');
+      const [inputUsername, setInputUsername] = useState('');
+      const [messages, setMessages] = useState([]);
+      const [input, setInput] = useState('');
+      const socket = io('http://192.168.1.4:4000'); // Cambiar por la URL de Vercel tras el despliegue
+
+      useEffect(() => {
+        // Cargar historial de mensajes
+        socket.on('loadMessages', (msgs) => {
+          setMessages(msgs);
+        });
+
+        // Escuchar nuevos mensajes
+        socket.on('receiveMessage', (message) => {
+          setMessages((prev) => [...prev, message]);
+        });
+
+        return () => socket.disconnect();
+      }, []);
+
+      const handleSetUsername = (e) => {
+        e.preventDefault();
+        if (inputUsername.trim()) {
+          setUsername(inputUsername);
+        }
+      };
+
+      const sendMessage = (e) => {
+        e.preventDefault();
+        if (input.trim() && username) {
+          const message = { username, text: input };
+          socket.emit('sendMessage', message);
+          setInput('');
+        }
+      };
+
+      return (
+        <div className="max-w-md mx-auto p-4">
+          <h1 className="text-2xl font-bold mb-4">Chat en Tiempo Real</h1>
+          {!username ? (
+            <form onSubmit={handleSetUsername} className="mb-4">
+              <input
+                type="text"
+                value={inputUsername}
+                onChange={(e) => setInputUsername(e.target.value)}
+                className="border p-2 w-full"
+                placeholder="Ingresa tu nombre de usuario"
+              />
+              <button type="submit" className="bg-blue-500 text-white p-2 mt-2 w-full">
+                Establecer Nombre
+              </button>
+            </form>
+          ) : (
+            <>
+              <p className="mb-2">Usuario: {username}</p>
+              <div className="h-64 overflow-y-auto border p-2 mb-4">
+                {messages.map((msg, index) => (
+                  <div key={index} className="mb-2">
+                    <strong>{msg.username}:</strong> {msg.text}
+                  </div>
+                ))}
+              </div>
+              <form onSubmit={sendMessage} className="flex">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  className="flex-1 border p-2"
+                  placeholder="Escribe un mensaje..."
+                />
+                <button type="submit" className="bg-blue-500 text-white p-2">
+                  Enviar
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
