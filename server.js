@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { Pool } = require('pg');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -17,10 +18,13 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// Servir archivos estáticos desde la carpeta public
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Conexión a PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
- // ssl: { rejectUnauthorized: false }, // Necesario para Vercel Postgres
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false, // SSL solo en producción
 });
 
 // Crear tabla de mensajes si no existe
@@ -36,7 +40,7 @@ const pool = new Pool({
 })();
 
 // Endpoint básico
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.send('Servidor de chat en tiempo real');
 });
 

@@ -20,7 +20,7 @@
       const [inputUsername, setInputUsername] = useState('');
       const [messages, setMessages] = useState([]);
       const [input, setInput] = useState('');
-      const socket = io('http://192.168.1.4:4000'); // Cambiar por la URL de Vercel tras el despliegue
+      const socket = io(); // URL relativa, se conecta al mismo host
 
       useEffect(() => {
         // Cargar historial de mensajes
